@@ -264,3 +264,11 @@ The next vignettes focus on inference for the offspring distribution given the
 growth data of a population. From this estimated offspring distribution, we can
 use the formulas and computations in this vignette (such as $\phi(s) = s$) to
 estimate the probability that the population will eventually go extinct.
+
+The proofs are from homework assignments from my *Math 235: Markov Chains,
+Martingales, and Brownian Motion* course, taught by Ewain Gwynne.
+Similar theorems, through argued for differently, are presented in Lalley's
+[lecture notes](https://galton.uchicago.edu/~lalley/Courses/312/Branching.pdf)
+on stochastic processes.
+
+
