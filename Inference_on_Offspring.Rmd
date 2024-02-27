@@ -1,0 +1,20 @@
+---
+title: "Bayesian Inference for Offspring Distribution"
+author: "Jackson Van Vooren"
+date: "March 1, 2024"
+header-includes:
+  - \usepackage{amsthm}
+output: workflowr::wflow_html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prerequisites
+
+You should be familiar with discrete time Markov chains on a countably infinite
+state space. It may be helpful to understand some basic properties of generating
+functions, though definitions and examples will be provided.
+
+## Introduction
