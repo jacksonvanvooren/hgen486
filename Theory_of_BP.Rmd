@@ -1,0 +1,250 @@
+---
+title: "Theory of Branching Processes"
+author: "Jackson Van Vooren"
+date: "March 1, 2024"
+header-includes:
+  - \usepackage{amsthm}
+output: workflowr::wflow_html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prerequisites
+
+You should be familiar with discrete time Markov chains on a countably infinite
+state space. It may be helpful to understand some basic properties of generating
+functions, though definitions and examples will be provided.
+
+## Introduction
+
+A branching process is a model for growth of a population over time. It is also
+known as a Galton-Watson process. It is a branching stochastic process that
+arose out of Francis Galton's statistical research on the extinction of a
+family's last name.
+
+Galton-Watson processes assume no distinction in sex (just as family names are
+passed patrilineally). As a result, this model is widely used to examine
+phenomena such as the transmission of the Y chromosome (paternal) or mitochondria
+(maternal). Such branching processes are also used to model the population growth
+of a bacterium that reproduces asexually.
+
+
+## Key definitions in a branching process
+
+### The offspring distribution
+
+The offspring distribution, $\{p_k\}$, is the set of probabilities that an
+individual will have $k$ offspring. It is given by,
+$$\{p_k\}_{k=0,1,2,\dots} \quad \text{with } \; p_k \geq 0
+                        \quad \text{and } \; \sum_{k=0}^{\infty} p_k = 1.$$
+Define $\mu$, the mean of the offspring distribution, as
+$$\mu = \sum_{k=1}^{\infty} k p_k$$
+Let $Z_n$ be the size of a population at time (or generation) $n$. We assume
+each individual reproduces **independently** of each other according to $\{p_k\}$.
+Formally, let $\eta_j$ be the number of offspring individual $j$ has, where $j$ is
+a member of generation $n$ and its offspring are a part of $n+1$. Then, the
+number of individuals in the population at generation $n+1$ is,
+$$Z_{n+1} = \sum_{j=1}^{Z_n} \eta_j \quad\quad \text{with } \; \mathbb{P}[\eta_j = k | Z_n = \ell] = p_k.$$
+That is, the number of individuals of the next generation is the sum of the number
+of offspring of all individuals in the prior generation. This model, then, assumes
+that the organism dies after giving birth.
+
+By requiring the conditional independence of the $\eta_j$'s given $Z_n$, $\{Z_n\}$
+forms a Markov chain. The number of individuals of generation $n+1$ only depends
+on how many individuals there are currently at time $n$.
+
+### Extinction probability
+
+Broadly, we are interested in determining how likely a given population is to go
+extinct. Define the extinction probability, $P_e$, as,
+$$P_e = \mathbb{P}[\text{ there exists } n \in \mathbb{N} \text{ such that } Z_n = 0 \;|\; Z_0 = 1]$$
+If we start with one individual, we are interested in asking, will the population
+go extinct? If so, can we infer how long extinction will take?
+
+## Simulating a branching process
+
+Before proving results about Galton-Watson processes, we can simulate these
+Markov chains, $\{Z_n\}$, to get a general idea of answers to these questions.
+$\{Z_n\}$ is essentially a tree, where each $i$ is a level with $Z_i$ nodes.
+
+Let's assume we start with one individual, $Z_0 = 1$. And suppose each individual
+reproduces with offspring distribution $\{p_k\} \sim \text{Poisson}(\lambda)$.
+
+```{r}
+simulate_bp <- function(num_generations, lambda) {
+  total_individuals <- numeric(num_generations)
+  total_individuals[1] <- 1             # 1 individual in the first gen
+
+  for (i in 2:num_generations) {
+    offspring <- 0
+  
+    for (j in 1:total_individuals[i-1]) {
+      offspring <- offspring + rpois(1, lambda)
+    }
+    if (offspring == 0) {
+      total_individuals[i] <- 0
+      return(total_individuals[1:i])    # Early return if extinct
+    }
+    total_individuals[i] <- offspring
+  }
+  return(total_individuals)
+}
+```
+
+#### $\lambda = 1$
+
+The below code simulates 5 trials of 10 generations of a branching process with
+offspring distribution Poission($1$). With $\lambda = 1$, some of the branching
+processes go extinct, while others survive through the ten generations. Note that
+$\mu = \mathbb{E}[\{p_k\}] = \lambda = 1$.
+
+```{r}
+num_trials <- 5
+num_generations <- 10
+lambda <- 1
+
+run_trials <- function(num_trials, num_generations, lambda){
+  for (trial in 1:num_trials){
+    result <- simulate_bp(num_generations, lambda)
+    print(result)
+  }
+}
+
+trials <- run_trials(num_trials, num_generations, lambda)
+```
+#### $\lambda = 3$
+
+Suppose we take $\lambda = 3$. None of the branching processes go extinct. In
+fact, with a Poisson offspring distribution, we see very quick exponential growth
+in the number of total individuals of the population. Intuitively, since the mean
+of a Poisson distribution is $\lambda = 3$, each individual has $3$ offspring on
+average.
+```{r}
+lambda <- 4
+trials <- run_trials(num_trials, num_generations, lambda)
+```
+#### $\lambda = 0.5$
+
+If we take $\lambda = 0.5$, you should be able to guess what is going to happen.
+Since the mean number of offspring per individual is $\mu = 0.5 < 1$, the population
+cannot be replaced and it goes extinct very quickly.
+```{r}
+lambda <- 0.5
+trials <- run_trials(num_trials, num_generations, lambda)
+```
+Indeed, if $\mu$, the mean of the offspring distribution, satisfies $\mu < 1$, then
+the probability of extinction, $P_e$, is $1$.
+
+**Proof.**
+Assume $Z_0 = 1$ and $\mu < 1$. Then, $\mathbb{E}[Z_n] = \mu^n \to 0$.
+
+This equality follows because the average number of offspring of each individual
+is independent. In generation 0, there is 1 individual. In generation 1, we expect
+$\mu$ individuals. In the next generation, each of the $\mu$ individuals has $\mu$
+offspring, so $\mathbb{E}[Z_2] = \mu^2$, and so on.
+
+Also, $\mathbb{P}[Z_n \neq 0] = \mathbb{P}[Z_n \geq 1] \leq \mathbb{E}[Z_n] \to 0$.
+Thus, $\mathbb{P}[Z_n = 0] \to 1$ as $n \to \infty$, as needed.
+
+We call a branching process **subcritical** when $\mu < 1$. To understand the behavior
+of a **critical** ($\mu=1$) or **supercritical** ($\mu > 1$) branching process,
+we must discuss probability generating functions.
+
+
+## Probability generating functions
+
+For a random variable $X$, the probability generating function for $X$,
+which I will denote $\phi$, with $s \in [0, \infty)$, is
+$$\phi(s) = \mathbb{E}[s^X] = \sum_{k=0}^{\infty}s^k \mathbb{P}[X=k].$$
+With a branching process, the probability that $Z_n = k$ is exactly $p_k$, so
+$$\phi(s) = \sum_{k=0}^{\infty}s^k p_k.$$
+is the generating function.
+
+Observe that $\phi(0) = p_0$ and $\phi(1) = \sum_{k=0}^{\infty} p_k = 1$.
+
+### Extinction Probability: $\phi(s) = s$
+
+We can now analytically solve the probability of extinction. The extinction
+probability is given by the solution to $s = \phi(s)$.
+
+**Proof Sketch.**
+
+Let $P_e$ be the probability of extinction. For a population to go extinct,
+one of two things must occur. If there is a single individual in the population,
+then it must have $0$ offspring. This occurs with probability $p_0 = \phi(0)$ from the
+offspring distribution.
+
+Otherwise, each individual must form a branching process that is guaranteed to
+go extinct at some point. Here, we start considering this process at generation $1$,
+since the prior case covers if there is only one individual ($Z_0 = 1$). Given
+$Z_1 = k$, the probability of each individual's branching processes going extinct
+is $\sum_{k=1}^{\infty}P_e^k p_k$.
+
+These are disjoint events, so $$P_e = p_0 + \sum_{k=1}^{\infty}P_e^k p_k.$$
+
+Observe that
+$$\phi(P_e) = \sum_{k=0}^{\infty}P_e^k p_k = \phi(0) + \sum_{k=1}^{\infty}P_e^k p_k
+                                              = p_0 + \sum_{k=1}^{\infty}P_e^k p_k.$$
+
+That is, $\phi(P_e) = P_e$.
+
+In fact, the extinction probability is the smallest solution to $\phi(s) = s$.
+I defer the proof of this to UChicago professor Steven Lalley's notes. There is
+also a more complete proof of this fact that relies on the continuity of $\phi(s) - s$
+and the existence of a least element in the closed set $\{s \geq 0 : \phi(s) = s\}$.
+
+### Example: Solving for $P_e$
+
+Suppose an amoeba can either have $0, 1$, or $2$ offspring, which follows the distribution
+$$\{p_k\} = (p_0, p_1, p_2) = \left(\frac{1}{10}, \frac{3}{5}, \frac{3}{10}\right).$$
+Note $\mu = 0 \cdot \frac{1}{10} + 1 \cdot \frac{3}{5} + 2 \cdot \frac{3}{10} = \frac{6}{5} > 1$,
+so this is a supercritical branching process.
+
+We have $\phi(s) = \sum_{k=0}^{2} p_k s^k = \frac{1}{10} + \frac{3}{5}s + \frac{3}{10}s^2$.
+Solving $\phi(s) = s$, we find $s = \frac{1}{3}$ and $s = 1$. Taking the smallest
+positive solution, $P_e = \frac{1}{3}$.
+
+### $P_e$ for $\mu \geq 1$
+
+We've seen that if $\mu < 1$, $P_e = 1$. And with this example, where $\mu > 1$, we
+found a solution for $P_e < 1$. This happens to always be the case.
+
+When $\mu = 1$, $P_e = 1$. A rigorous proof can again be found in Professor
+Lalley's lecture notes, though I run $1,000$ trials of $5,000$ generations, and
+nearly all eventually go extinct.
+
+```{r}
+frac_extinct_trials <- function(num_trials, num_generations, lambda) {
+  result <- 0
+  for (trial in 1:num_trials) {
+    bp <- simulate_bp(num_generations, lambda)
+    
+    if (length(bp) < num_generations) {
+      result <- result + 1
+    }
+  }
+  return(result / num_trials)
+}
+
+num_trials <- 1000
+num_generations <- 5000
+lambda <- 1
+extinction_prob <- frac_extinct_trials(num_trials, num_generations, lambda)
+extinction_prob
+```
+So, only when an individual, on average, produces more than $1$ offspring, can
+we find an extinction probability less than $1$.
+
+## Closing remarks
+
+This introduction showed how to simulate a simple branching process in R and
+provided some key definitions and results such branching processes. However,
+these calculations and theory are only useful when we know the offspring distribution,
+$\{p_k\}$, which is rarely the case.
+
+The next vignettes focus on inference for the offspring distribution given the
+growth data of a population. From this estimated offspring distribution, we can
+use the formulas and computations in this vignette (such as $\phi(s) = s$) to
+estimate the probability that the population will eventually go extinct.
