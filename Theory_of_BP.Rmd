@@ -135,9 +135,8 @@ cannot be replaced and it goes extinct very quickly.
 lambda <- 0.5
 trials <- run_trials(num_trials, num_generations, lambda)
 ```
-Indeed, if $\mu$, the mean of the offspring distribution, satisfies $\mu < 1$, then
-the probability of extinction, $P_e$, is $1$.
 
+##### Theorem. If $\mu < 1$, then $P_e = 1$.
 **Proof.**
 Assume $Z_0 = 1$ and $\mu < 1$. Then, $\mathbb{E}[Z_n] = \mu^n \to 0$.
 
@@ -167,11 +166,11 @@ Observe that $\phi(0) = p_0$ and $\phi(1) = \sum_{k=0}^{\infty} p_k = 1$.
 
 ### Extinction Probability: $\phi(s) = s$
 
-We can now analytically solve the probability of extinction. The extinction
-probability is given by the solution to $s = \phi(s)$.
+We can now analytically solve the probability of extinction.
 
-**Proof Sketch.**
+##### Theorem. The extinction probability is given by the solution to $s = \phi(s)$.
 
+**Proof.**
 Let $P_e$ be the probability of extinction. For a population to go extinct,
 one of two things must occur. If there is a single individual in the population,
 then it must have $0$ offspring. This occurs with probability $p_0 = \phi(0)$ from the
@@ -191,10 +190,9 @@ $$\phi(P_e) = \sum_{k=0}^{\infty}P_e^k p_k = \phi(0) + \sum_{k=1}^{\infty}P_e^k 
 
 That is, $\phi(P_e) = P_e$.
 
-In fact, the extinction probability is the smallest solution to $\phi(s) = s$.
-I defer the proof of this to UChicago professor Steven Lalley's notes. There is
-also a more complete proof of this fact that relies on the continuity of $\phi(s) - s$
-and the existence of a least element in the closed set $\{s \geq 0 : \phi(s) = s\}$.
+In fact, the extinction probability is the **smallest solution** to $\phi(s) = s$.
+I defer the proof of this to UChicago professor [Steven Lalley's notes](https://galton.uchicago.edu/~lalley/Courses/312/Branching.pdf).
+For our computational purposes, knowing that $P_e$ solves $\phi(P_e) = P_e$ is mostly sufficient.
 
 ### Example: Solving for $P_e$
 
@@ -207,14 +205,30 @@ We have $\phi(s) = \sum_{k=0}^{2} p_k s^k = \frac{1}{10} + \frac{3}{5}s + \frac{
 Solving $\phi(s) = s$, we find $s = \frac{1}{3}$ and $s = 1$. Taking the smallest
 positive solution, $P_e = \frac{1}{3}$.
 
-### $P_e$ for $\mu \geq 1$
+##### Theorem. $P_e = 1$ when $\mu = 1$ and $P_e < 1$ for $\mu > 1.$
 
-We've seen that if $\mu < 1$, $P_e = 1$. And with this example, where $\mu > 1$, we
-found a solution for $P_e < 1$. This happens to always be the case.
+**Proof.** Assume $\mu \geq 1$ and $p_0 \neq 0$ so that no offspring is a possibility.
+Consider $\phi(s) = \sum_{k=0}^{\infty} p_k s^k$, the probability generating
+function. The second derivative with respect to $s$ is given by,
+$$\phi{''}(s) = \sum_{k=2}^{\infty} (k-1)kp_k s^{k-2}.$$
+Since $1 \leq \mu = p_1 + 2p_2 + 3p_3 + \dots$ and $p_0 \neq 0$, then there is some $k\geq 2$ such that $p_k > 0$.
+Otherwise, $\mu < 1$, which contradicts our assumptions. So, $\phi''(s) > 0$.
 
-When $\mu = 1$, $P_e = 1$. A rigorous proof can again be found in Professor
-Lalley's lecture notes, though I run $1,000$ trials of $5,000$ generations, and
-nearly all eventually go extinct.
+Also, $\phi(1) = 1$ and $\phi'(1) = \mu$. $\phi'(s)$ is increasing on $[0, \mu)$,
+so $\phi'(s) < \mu = 1$ for $s \in [0,1)$.
+
+**If $\mu = 1$,** by the fundamental theorem of calculus,
+$$1 - \phi(s) = \int_{s}^{1} \phi'(u) du < 1 - s$$
+Thus, $\phi(s) > s$ for $s \in [0,1)$. So, the only solution to $\phi(s)=s$ is $s=1$.
+
+**If $\mu \geq 1$,** then $\phi'(1) = \mu > 1$. But, $\frac{d}{ds} s = 1$. That is,
+there is some $s < 1$ where $\phi(s) < s$, i.e., $\phi(s)$ and $s$ must intersect
+at some point where $s < 1$. Thus, $P_e \in (0,1)$ satisfying $\phi(P_e) = P_e$.
+
+##### Proof by simulation
+
+To confirm this argument, I run $1,000$ trials of $5,000$ generations when $\mu = 1$,
+and nearly all eventually go extinct.
 
 ```{r}
 frac_extinct_trials <- function(num_trials, num_generations, lambda) {
@@ -235,13 +249,14 @@ lambda <- 1
 extinction_prob <- frac_extinct_trials(num_trials, num_generations, lambda)
 extinction_prob
 ```
+
 So, only when an individual, on average, produces more than $1$ offspring, can
 we find an extinction probability less than $1$.
 
 ## Closing remarks
 
 This introduction showed how to simulate a simple branching process in R and
-provided some key definitions and results such branching processes. However,
+provided some key definitions and theoretical results of branching processes. However,
 these calculations and theory are only useful when we know the offspring distribution,
 $\{p_k\}$, which is rarely the case.
 
