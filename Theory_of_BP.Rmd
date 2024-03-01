@@ -115,12 +115,12 @@ run_trials <- function(num_trials, num_generations, lambda){
 
 trials <- run_trials(num_trials, num_generations, lambda)
 ```
-#### $\lambda = 3$
+#### $\lambda = 4$
 
-Suppose we take $\lambda = 3$. None of the branching processes go extinct. In
+Suppose we take $\lambda = 4$. None of the branching processes go extinct. In
 fact, with a Poisson offspring distribution, we see very quick exponential growth
 in the number of total individuals of the population. Intuitively, since the mean
-of a Poisson distribution is $\lambda = 3$, each individual has $3$ offspring on
+of a Poisson distribution is $\lambda = 4$, each individual has $4$ offspring on
 average.
 ```{r}
 lambda <- 4
@@ -217,11 +217,11 @@ Otherwise, $\mu < 1$, which contradicts our assumptions. So, $\phi''(s) > 0$.
 Also, $\phi(1) = 1$ and $\phi'(1) = \mu$. $\phi'(s)$ is increasing on $[0, \mu)$,
 so $\phi'(s) < \mu = 1$ for $s \in [0,1)$.
 
-**If $\mu = 1$,** by the fundamental theorem of calculus,
+If $\mu = 1$,*by the fundamental theorem of calculus,
 $$1 - \phi(s) = \int_{s}^{1} \phi'(u) du < 1 - s$$
 Thus, $\phi(s) > s$ for $s \in [0,1)$. So, the only solution to $\phi(s)=s$ is $s=1$.
 
-**If $\mu \geq 1$,** then $\phi'(1) = \mu > 1$. But, $\frac{d}{ds} s = 1$. That is,
+If $\mu > 1$, then $\phi'(1) = \mu > 1$. But, $\frac{d}{ds} s = 1$. That is,
 there is some $s < 1$ where $\phi(s) < s$, i.e., $\phi(s)$ and $s$ must intersect
 at some point where $s < 1$. Thus, $P_e \in (0,1)$ satisfying $\phi(P_e) = P_e$.
 
@@ -265,10 +265,7 @@ growth data of a population. From this estimated offspring distribution, we can
 use the formulas and computations in this vignette (such as $\phi(s) = s$) to
 estimate the probability that the population will eventually go extinct.
 
-The proofs are from homework assignments from my *Math 235: Markov Chains,
-Martingales, and Brownian Motion* course, taught by Ewain Gwynne.
 Similar theorems, through argued for differently, are presented in Lalley's
 [lecture notes](https://galton.uchicago.edu/~lalley/Courses/312/Branching.pdf)
 on stochastic processes.
-
 
