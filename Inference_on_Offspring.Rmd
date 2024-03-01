@@ -1,5 +1,5 @@
 ---
-title: "Bayesian Inference for Offspring Distribution"
+title: "Inference for Offspring Mean"
 author: "Jackson Van Vooren"
 date: "March 1, 2024"
 header-includes:
@@ -13,8 +13,307 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Prerequisites
 
-You should be familiar with discrete time Markov chains on a countably infinite
-state space. It may be helpful to understand some basic properties of generating
-functions, though definitions and examples will be provided.
+You should be familiar with the basic theory of branching processes, which is
+presented in the **Theory of Branching Processes** vignette. Also, knowledge
+of Bayesian statistics, including conjugate priors and deriving the posterior
+distribution, is required.
 
 ## Introduction
+
+Generally, when examining a population, we do not have data on the average number
+of offspring an individual has. Also, for some organisms, we only collect
+data on two generations (parents and children), unless we want to potentially wait
+years.
+
+An intuitive, but crude, way to estimate the mean number of offspring per individual
+is $\dfrac{\text{number of children}}{\text{number of parents}}$. If some generation
+has $100$ individuals and the prior one has $50$, then each parent averaged $2$
+offspring.
+
+
+This, however, provides little insight into the underlying offspring distribution.
+A Bayesian approach allows us to incorporate prior knowledge, which is especially
+useful if the sample size is small. Bayesian analysis also provides a framework for
+quantifying uncertainty in parameter estimates. Instead of providing a single point
+estimate, Bayesian methods yield a posterior distribution, which reflects a range
+of plausible values. Above all, a Bayesian approach to estimating the mean of the
+offspring distribution prepares us to further analyze the probability distribution,
+which is done in the next vignette.
+
+## Graphing a Branching Process
+
+We will use the `simulate_bp` function in the last vignette. This time, we also
+keep track of the number of offspring each individual has. Again, we assume this
+offspring process follows a Poisson($\lambda$) distribution.
+
+```{r}
+simulate_bp <- function(num_generations, lambda) {
+  total_individuals <- numeric(num_generations)
+  total_individuals[1] <- 1
+  offspring_count <- list()
+  
+  for (i in 2:num_generations) {
+    offspring <- 0
+    offspring_per_individual <- numeric(total_individuals[i-1])
+
+    for (j in 1:total_individuals[i-1]) {
+      offspring_per_individual[j] <- rpois(1, lambda)
+      offspring <- offspring + offspring_per_individual[j]
+    }
+    if (offspring == 0) {
+      total_individuals[i] <- 0
+      return(list(total_individuals = total_individuals[1:i], offspring_count = offspring_count))
+    }
+    total_individuals[i] <- offspring
+    offspring_count[[i-1]] <- offspring_per_individual
+  }
+  return(list(total_individuals = total_individuals, offspring_count = offspring_count))
+}
+```
+
+A somewhat contrived, though reasonable, example is analyzing the growth of
+female octopi in a population. Say some generation of octopi females have just
+given birth. Since octopi are solitary, we can assume that this models all the
+octopi in a certain geographic region. Octopi die soon after giving birth,
+so the mother does not get counted in the next generation.
+
+```{r}
+num_generations <- 20
+lambda <- 2
+bp_simulation <- simulate_bp(num_generations, lambda)
+```
+
+The total number of individuals at each generation is:
+```{r}
+tot_ind <- bp_simulation$total_individuals
+tot_ind
+```
+
+At generation 10, for each of the $40$ individuals, the offspring observations
+are:
+```{r}
+X <- bp_simulation$offspring_count[[5]]
+X
+```
+
+The 5th generation has $40$ individuals, and each of those has a number of offspring
+specified by the corresponding index of `X`. For example, octupus 39 has 1 female
+child. Graphically, the population growth looks exponential.
+
+```{r}
+plot_bp <- function(bp_data) {
+  total_individuals <- bp_data$total_individuals
+  
+  num_generations <- length(total_individuals)
+  generations <- 1:num_generations
+  
+    plot(generations, total_individuals, type = "l",
+       xlab = "Generation", ylab = "Total Individuals",
+       main = "Individuals in Branching Process")
+
+  for (i in 1:20) {
+    points(i, total_individuals[i], col = "blue", pch = 19)
+  }
+}
+plot_bp(bp_simulation)
+```
+We find that the mean number of offspring in generation 5 is:
+```{r}
+mean(X)
+```
+
+
+```{r}
+sequence <- c(1, 4, 4, 2, 0, 3, 2, 4, 3, 1, 1, 0, 0, 0, 2, 5, 3, 1, 1, 3, 2, 3, 0, 2, 1, 3, 1, 6, 3, 5, 1, 5, 1, 2, 4, 3, 2, 1, 1, 0)
+
+```
+But, our simulation set $\mu = \lambda = 2$. Bayesian inference can do better!
+
+## Beta-Binomial Conjugates for Mean
+
+```{r}
+
+prior <- function(p, a, b){
+  return(dbeta(p, a, b))
+}
+
+likelihood <- function(data, K, p) {
+  return(prod(dbinom(data, size = K, prob = p)))
+}
+
+betabin_tour <- function(N, a, b, data, K) {
+  current <- rbeta(1, a, b)
+  p <- rep(0, N)
+  p[1] <- current
+  
+  for (i in 2:N) {
+    current <- p[i - 1]
+    proposal <- current + rnorm(1, 0, 0.01)
+    
+    alpha <- exp(log(prior(proposal, a, b)) + log(likelihood(data, K, proposal))
+                 - log(prior(current, a, b)) - log(likelihood(data, K, current)))
+
+    if (runif(1) < alpha) {
+      p[i] <- proposal
+    } else {
+      p[i] <- current
+    }
+  }
+  
+  return(list(p = p))
+}
+
+
+
+# Example usage:
+N <- 30000  # Number of iterations
+X <- bp_simulation$offspring_count[[5]]
+X
+a <- 1     # Shape parameter of prior
+b <- 1     # Shape parameter of prior
+K <- 10  # Number of trials in binomial distribution
+
+result <- betabin_tour(N, a, b, X, K)
+mean(result$p[20000:N])
+result$p[29990:30000]
+
+```
+
+
+Very close to the actual mean of the data, both of which are close to the actual $\lambda = 2$.
+
+
+Though MCMC gets us the mean, this also allows us to specify a probability distribution
+for the offspring. We have binom so we can calculate each probability.
+
+We also can estimate the actual probability of a process being supercritical.
+P[1/N] whatever it is. TODO.
+
+
+
+We have the whole beta thing.
+```{r}
+S <- 10 # Here 20
+n <- 10
+N <- 7
+
+integrand <- function(p){ dbeta(p, shape1 = 1 + S, shape2 = 1 + n * N - S) }
+result1 <- integrate(integrand, lower = 1/N, upper = 1)
+result2 <- integrate(integrand, lower = 0, upper = 1)
+result <- result1$value / result2$value
+
+# Print the result
+print(result)
+
+
+```
+
+
+This is Bayesian inference on the MEAN of an offspring distribution (using a beta-binomial prior).
+
+Perhaps more interesting is that, if we observe multiple generations over time,
+and keep track of the offspring, we can actually perform inference on each of
+the $p_k$'s, where $1\leq k \keq K$, with $K$ being the assumed maximum number of offspring.
+
+```{r}
+
+create_offspring_summary <- function(offspring_count) {
+  max_offspring <- max(unlist(offspring_count))
+  num_generations <- length(offspring_count)
+  offspring_summary <- matrix(0, nrow = num_generations, ncol = max_offspring + 1)
+  colnames(offspring_summary) <- 0:max_offspring
+  
+  for (i in 1:length(offspring_count)) {
+    counts <- table(offspring_count[[i]])
+    offspring_summary[i, 1:length(counts)] <- counts
+  }
+  
+  return(offspring_summary)
+}
+
+```
+
+
+```{r}
+
+num_generations <- 10
+lambda <- 1.5
+n_bp_simulation <- simulate_bp(num_generations, lambda)
+
+result <- create_offspring_summary(n_bp_simulation$offspring_count)
+result
+
+```
+
+```{r}
+
+c <- colSums(result, na.rm = TRUE)
+
+# Print the vector c
+print(c)
+
+X <- as.vector(c)
+X
+```
+
+```{r}
+
+# PRIOR SHOULDNT HAVE p? TODO. LOOK AT THE EXAMPLE ONLINE I FOUND.
+prior <- function(p, alpha) {
+  return((log(gtools::ddirichlet(p, alpha))))
+}
+
+likelihood <- function(data, p) {
+  multi <- (log(dmultinom(data, prob = p)))
+  return(multi)
+}
+
+
+```
+
+```{r}
+mcmc_multinomial_dirichlet <- function(N, alpha, data) {
+  p_list <- list()
+  p_list[[1]] <- c(1/6, 1/6, 1/6, 1/6, 1/6, 1/6)
+  
+  for (i in 1:N) {  # Start loop from i = 1
+
+    current <- p_list[[i]]
+    proposal <- gtools::rdirichlet(1, c(1,1,1,1,1,1))
+
+    prior1 <- prior(proposal, alpha)
+    lik1 <- likelihood(data, proposal)
+    prior2 <- prior(current, alpha)
+    lik2 <- likelihood(data, current)
+    
+    A <- exp(prior1 + lik1 - prior2 - lik2)
+    
+    if (runif(1) < A) {
+      p_list[[i + 1]] <- proposal
+    } else {
+      p_list[[i + 1]] <- current
+    }
+  }
+  
+  return(p_list)
+}
+
+# Example usage: # for reproducibility
+N <- 10000  # Number of iterations
+X <- c(35, 51, 43, 17,  7, 2)
+35 + 51 + 43 +17 +7 +2
+new_x <- X/155
+new_x
+# alpha <- c(4,4,4,4,2,2,2,2,1,1,1,1)
+alpha <- c(1,1,1,1,1,1)
+result <- mcmc_multinomial_dirichlet(N, alpha, X)
+result[[N]]
+
+
+```
+
+
+
+
+
+
