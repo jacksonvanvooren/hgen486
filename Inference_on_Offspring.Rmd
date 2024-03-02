@@ -1,5 +1,5 @@
 ---
-title: "Inference for Offspring Mean"
+title: "Inference for the Offspring Distribution"
 author: "Jackson Van Vooren"
 date: "March 1, 2024"
 header-includes:
@@ -28,7 +28,6 @@ An intuitive, but crude, way to estimate the mean number of offspring per indivi
 is $\frac{\text{number of children}}{\text{number of parents}}$. If some generation
 has $100$ individuals and the prior one has $50$, then each parent averaged $2$
 offspring.
-
 
 This, however, provides little insight into the underlying offspring distribution.
 A Bayesian approach allows us to incorporate prior knowledge, which is especially
@@ -139,8 +138,8 @@ Note here that lowercase $n$ is the number of observations of our offspring proc
 while $N$ is the maximum number of offspring we fix.
 
 ```{r}
-likelihood <- function(data, K, p) {
-  return(prod(dbinom(data, size = K, prob = p)))
+likelihood <- function(data, N, p) {
+  return(prod(dbinom(data, size = N, prob = p)))
 }
 ```
 
@@ -152,8 +151,8 @@ This is a uniform distribution, so it is the non-informative prior. If we knew
 more about the species' behavior, we could potentially set a more informative prior.
 
 ```{r}
-prior <- function(p, a, b){
-  return(dbeta(p, a, b))
+prior <- function(p, alpha, beta){
+  return(dbeta(p, alpha, beta))
 }
 ```
 
@@ -161,27 +160,39 @@ prior <- function(p, a, b){
 
 Since we are performing inference on a single $p$, I use the standard Metropolis-Hastings
 algorithm and assume a normal proposal distribution with a standard deviation of
-$0.05$.
+$0.05$. In this Metropolis-Hastings proposal, the proposal distribution is a normal
+random deviate centered around the current value of the parameter. This is the
+random walk MH algorithm.
+
+We expect the proposal distribution to be symmetric, so in theory we could use
+the Metropolis algorithm. However, we can still include the $Q(x_t|y)$ and $Q(y|x_t)$
+in the algorithm, even though they are expected to cancel.
 
 ```{r}
 beta_binom_MCMC <- function(num_iters, alpha, beta, data, N, proposal_sd) {
   current <- rbeta(1, alpha, beta)
-  p <- rep(0, num_iters)
-  p[1] <- current
-  
-  for (i in 2:num_iters) {
-    current <- p[i - 1]
-    proposal <- current + rnorm(1, 0, proposal_sd)
+    p <- rep(0, num_iters)
+    p[1] <- current
     
-    A <- exp(log(prior(proposal, alpha, beta)) + log(likelihood(data, N, proposal))
-                 - log(prior(current, alpha, beta)) - log(likelihood(data, N, current)))
-
-    if (runif(1) < A) {
-      p[i] <- proposal
-    } else {
-      p[i] <- current
+    for (i in 2:num_iters) {
+      current <- p[i - 1]
+      proposal <- rnorm(1, current, proposal_sd)
+      
+      log_target_prop <- log(prior(proposal, alpha, beta)) + log(likelihood(data, N, proposal))
+      log_target_curr <- log(prior(current, alpha, beta)) + log(likelihood(data, N, current))
+      
+      log_q_curr_given_prop <- log(dnorm(current, proposal, proposal_sd))
+      log_q_prop_given_curr <- log(dnorm(proposal, current, proposal_sd))
+      
+      A <- exp(log_target_prop + log_q_curr_given_prop
+                                      - log_target_curr - log_q_prop_given_curr)
+  
+      if (runif(1) < A) {
+        p[i] <- proposal
+      } else {
+        p[i] <- current
+      }
     }
-  }
   return(list(p = p))
 }
 ```
@@ -194,21 +205,19 @@ $n=40$ occurrences of the offspring distribution, which are 1, 4, 4, 2, 0, 3, 2,
 ```{r}
 data <- X
 N <- 6  # Max number of trials used in binomial distribution
-result <- beta_binom_MCMC(num_iters=30000, alpha=1, beta=1, data=data, N=N, proposal_sd=0.05)
-MCMC_p <- mean(result$p[20000:N]) # Perform burn-in and find the mean proportion, p
-MCMC_p
+MCMC_p <- beta_binom_MCMC(num_iters=30000, alpha=1, beta=1, data=data, N=N, proposal_sd=0.05)
+mean_p <- mean(MCMC_p$p[20000:30000]) # Perform burn-in and find the mean proportion, p
+mean_p
 ```
 
 Because we assume our offspring distribution is Binomial($N,p$), the mean is
 
 ```{r}
-mean_offspring <- N * MCMC_p
+mean_offspring <- N * mean_p
 mean_offspring
 ```
 
-This is quite close to the actual $\lambda = 2$.
-
-The mean of this data is
+This is quite close to the actual $\lambda = 2$. The actual mean of this data is
 ```{r}
 mean(X)
 ```
@@ -216,9 +225,22 @@ which is very close to the MCMC Bayesian estimate.
 
 ### Credible Interval
 
-TODO
+A key benefit to a Bayesian approach (compared to calculating the mean of the data)
+is that we can construct a credible interval for plausible values of the binomial
+parameter $p$.
 
-### Calculating Supercritical Probability
+```{r}
+p_quantiles <- quantile(MCMC_p$p, c(0.05, 0.95))
+p_quantiles
+```
+
+A 90\% credible interval of $p$ from our posterior samples, then, is $(0.309, 0.410)$.
+That is, the mean number of offspring could plausibly range between $(1.85, 2.45)$.
+The credible interval shows that this is very likely a supercritical branching
+process, as $\mu >> 1$. Indeed, we can use knowledge of the posterior distribution
+to calculate this probability.
+
+### Calculating Supercritical Probabilities
 
 #### Example 1. $\lambda >> 1$
 
@@ -244,25 +266,25 @@ p_supercritical <- numerator$value / denominator$value
 cat("Supercritical probability", p_supercritical)
 ```
 
-
 As expected, since $\mu = 2$, we almost surely can conclude that this branching
 process is supercritical, and the population will persist. Let's say we observe
 data that might not be as concusive.
 
 #### Example 2. $\lambda \approx 1$.
 
+Here, assume a vector of offspring counts: $(1, 1, 1, 0, 1, 1, 2, 1, 0, 1, 2, 0)$.
 We run the Metropolis Hastings algorithm to get an estimate of the potential
 mean parameter of the binomial offspring distribution. The expected value
 of the number of offspring is $0.97 < 1$.
 ```{r}
 num_iters <- 30000
-X <- c(1,1,1,0,1,1,2,1,0,1,2,0)
+X <- c(1, 1, 1, 0, 1, 1, 2, 1, 0, 1, 2, 0)
 alpha <- 1
 beta <- 1
 N <- max(data)
 
-MCMC_p <- beta_binom_MCMC(num_iters, alpha, beta, X, N, proposal_sd=0.01)
-mean_p <- mean(MCMC_p$p[20000:N])
+MCMC_p <- beta_binom_MCMC(num_iters, alpha, beta, X, N, proposal_sd=0.02)
+mean_p <- mean(MCMC_p$p[20000:30000])
 expected_offspring <- mean_p * N
 cat("Expected offspring:", expected_offspring)
 ```
@@ -294,224 +316,148 @@ If we observe multiple generations over time, and keep track of the offspring,
 we can perform inference on each of the $p_k$'s, where $1\leq k \leq K$, with $K$
 being fixed as the assumed maximum number of offspring.
 
-Our simulation code keeps track of the number of offspring each individual has.
-The below code takes in these counts and creates a summary matrix of the number
-of offspring per individual in each generation.
-
-```{r}
-create_offspring_summary <- function(offspring_count) {
-  max_offspring <- max(unlist(offspring_count))
-  num_generations <- length(offspring_count)
-  offspring_summary <- matrix(0, nrow = num_generations, ncol = max_offspring + 1)
-  colnames(offspring_summary) <- 0:max_offspring
-  
-  for (i in 1:length(offspring_count)) {
-    counts <- table(offspring_count[[i]])
-    offspring_summary[i, 1:length(counts)] <- counts
-  }
-  return(offspring_summary)
-}
-```
-
 Let's simulate a new branching process, where we observe $10$ generations of offspring.
-For purpose of the simulation, we assume $\lambda = 1.5$ and the offspring distribution
+For the purpose of the simulation, we assume $\lambda = 1.5$ and the offspring distribution
 is distributed Poisson($\lambda$).
 
 ```{r}
 num_generations <- 10
 lambda <- 1.5
 bp_simulation <- simulate_bp(num_generations, lambda)
-
-offspring_summary <- create_offspring_summary(bp_simulation$offspring_count)
-offspring_summary
-```
-This shows us the counts of number of offspring per individual for each of the generations simulated.
-
-Likelihood.
-
-Prior.
-
-Etc.
-
-```{r}
-c <- colSums(offspring_summary, na.rm = TRUE)
-X <- as.vector(c)
-X
+bp_simulation
 ```
 
+### Multinomial Likelihood
+
+We assume that each generation reproduces independently. Assume there is a maximum
+of $N$ offspring and that $p = (p_0, p_1, \dots, p_n)$ is an unknown probability
+vector. Each $p_i$ is the probability an individual has $i$ offspring.
+
+Each offspring count can be considered a separate observation, $y_i$, with $1 \leq i \leq n$, where
+$n$ is the total number of offspring process observations ($n=289$).
+
+Then, the likelihood of the observed data $y_i$ is
+$$\text{likelihood} = P(y_1, \dots, y_n \; | \; p) = \text{Multinomial}(X \;;\; p)$$
+where $X = (X_1, \dots, X_N)$ is a vector of counts of data with $0, \dots, N = 6$
+offspring in this case. With this simulated data,
 ```{r}
+offspring_observations <- unlist(bp_simulation$offspring_count)
+counts <- table(offspring_observations)
+counts
+X <- as.vector(counts)
+```
 
-# PRIOR SHOULDNT HAVE p? TODO. LOOK AT THE EXAMPLE ONLINE I FOUND.
-prior <- function(p, alpha) {
-  return((log(gtools::ddirichlet(p, alpha))))
-}
-
+The likelihood function is,
+```{r}
 likelihood <- function(data, p) {
-  return(log(dmultinom(data, prob = p)))
+  return(dmultinom(data, prob = p))
 }
-
-
 ```
 
+### Dirichlet Prior
+
+The natural choice for our prior is the Dirichlet distribution, which is the
+conjugate prior of the multinomial likelihood. Also, we have $N$ probabilities,
+all of which must sum to $1$, which makes
+$$p \sim \text{Dirichlet}(\alpha) \quad\text{ with } \alpha = (\alpha_1, \dots, \alpha_N)$$
+a reasonable choice.
+
 ```{r}
-mcmc_multinomial_dirichlet <- function(N, alpha, data) {
+prior <- function(p, alpha) {
+  return(gtools::ddirichlet(p, alpha))
+}
+```
+
+### Metropolis Hastings
+
+This MCMC algorithm is similar to the beta-binomial algorithm, with one key
+difference: the proposal distribution is no longer normal (and no longer symmetric).
+Because there are $N$ probabilities that sum to $1$, it makes sense to generate
+a random vector following the Dirichlet distribution.
+
+Here, we use an independent Metropolis-Hastings algorithm, where the proposal
+does not depend on the current parameter value. With $\alpha = (1, \dots, 1)$,
+the proposal distribution is a uniform draw across probabilities. With sufficient
+iterations, the MCMC will eventually converge and only accept probabilities that
+match the data.
+
+We could modify the algorithm to let the proposal distribution have parameter
+`alpha * current`, and we see similar results. In any case, though, the proposal
+distribution is not symmetric, and thus must be accounted for in our calculation
+of the acceptance probability, `A`. Since $Q(x_t|y) \neq Q(y|x_t)$ in general,
+we calculate
+$$A = \min \left(1, \frac{\pi(y)Q(x_t|y)}{\pi(x_t) Q(y|x_t)}\right) \quad \text{where }\;\; \pi(x) = \text{prior} \cdot \text{likelihood} = \text{target distribution}$$
+```{r}
+mcmc_multinomial_dirichlet <- function(num_iters, alpha, data) {
   p_list <- list()
   p_list[[1]] <- rep(1/length(alpha), length(alpha))
   
-  for (i in 1:N) {  # Start loop from i = 1
+  for (i in 2:num_iters) {
 
-    current <- p_list[[i]]
+    current <- p_list[[i - 1]]
     proposal <- gtools::rdirichlet(1, alpha)
-
-    prior1 <- prior(proposal, alpha)
-    lik1 <- likelihood(data, proposal)
-    prior2 <- prior(current, alpha)
-    lik2 <- likelihood(data, current)
     
-    A <- exp(prior1 + lik1 - prior2 - lik2)
+    log_target_prop <- log(prior(proposal, alpha)) + log(likelihood(data, proposal))
+    log_target_curr <- log(prior(current, alpha)) + log(likelihood(data, current))
+
+    log_q_curr <- log(gtools::ddirichlet(current, alpha))
+    log_q_prop <- log(gtools::ddirichlet(proposal, alpha))
+    
+    A <- exp(log_target_prop - log_target_curr + log_q_curr - log_q_prop)
     
     if (runif(1) < A) {
-      p_list[[i + 1]] <- proposal
+      p_list[[i]] <- proposal
     } else {
-      p_list[[i + 1]] <- current
+      p_list[[i]] <- current
     }
   }
-  
   return(p_list)
 }
-
-# Example usage: # for reproducibility
-N <- 20000  # Number of iterations
-X <- as.vector(c)
-alpha <- rep(1, length(X))
-result <- mcmc_multinomial_dirichlet(N, alpha, X)
-result[[N]]
-
-
 ```
 
-From a uniform distribution, we are able to simulate probabilities that represent the posterior.
-Theoretically, we can find the Dirichlet posterior.
+Using `X` as the vector of offspring counts,
+```{r}
+num_iters <- 30000
+alpha <- rep(1, length(X)) # Non-informative prior
+MCMC_p <- mcmc_multinomial_dirichlet(num_iters, alpha, X)
+mean_p <- colMeans(do.call(rbind, MCMC_p[20000:30000]))
+mean_p
+```
 
-Proof of Dirichlet - Multinomial conjugacy?
+That is, the probability that each individual has $0$ through $N$ offspring is
+$$\{p_k\} = (p_0, p_1, p_2, p_3, p_4, p_5, p_6) = (0.204, 0.335, 0.239, 0.157, 0.0427, 0.0135, 0.0077)$$
 
-And our simulated data actually follows a Poisson offspring with mean 2 or 1.5
-In both cases, without even knowing Poisson, we can perform inference on the BP!
+### Calculating the Extinction Probability
 
-So, given all this data, we now have Bayesian estimates for each offspring probability.
-
-Let's do a posterior credible interval.
-
-Note that this method still works if we only observe two generations (parent and child).
-Of course, more data is helpful in getting higher counts.
-
-Also phi(s) = s.
-
-Make sure to solve this from the data LOL. Use R it should not be that hard.
-
-BASICALLY WE DO HAVE A PROBLEM IF WE CANNOT OBSERVE OFFSPRING (SAY A RAPIDLY REPRODUCING BACTERIA COLONY).
-THIS MAKES SENSE THO, TO PERFORM INFERENCE ON WHAT THE OFFSPRING DISTRIBUTION IS, WE NEED TO OBSERVE
-THE NUMBER OF OFFSPRING.
-
-SAY WE WERE GIVEN INITIAL AND FINAL POPULATION NUMBERS.
-I.E. 1 AND 80? I MEAN WE'D NEED TO KNOW THE NUMBER OF GENERATIONS?
-1
-2
-4
-7
-10
-
-I DOUBT THIS IS EVEN POSSIBLE TBH? LIKE WE'D HAVE TO LOOK AT ALL POSSIBLE
-OFFSPRING DISTRIBUTION AND FIND THE MOST PROBABLE ONE?
-Like
-first one we have 1 offspring
-second one
-either 1 1 or 2 0 or 0 2
-Then,
-2 2 2 1 or 1 3 0 3 or 7 0 0 0 or whatever. You get the gist.
-We could assume an equal.
+Recall that the extinction probability is the smallest solution to $\phi(s) = s$,
+where $\phi$ is the probability generating function. Thus, we solve
+$$\phi(s) = 0.204\cdot s^0 + 0.335 \cdot s^1 + 0.239\cdot s^2 + 0.157\cdot s^3 + 0.0427 \cdot s^4 + 0.0135 \cdot s^5 + 0.0077 \cdot s^6 = s$$
 
 ```{r}
-library(partitions)
-
-restrictedparts(7, 4)
-
+# Subtract 1 from the s term to find roots of phi(s) = s
+polyroot(c(0.204, 0.335-1, 0.239, 0.157, 0.0427, 0.0135, 0.0077))
 ```
 
+The two real solutions are $0.369$ and $1$. So, $P_e$ of this branching process
+is $0.369$.
 
-Then, we can do MCMC on each observation of offspring
- 4 * (7, 0, 0, 0)
- 12 * (6, 1, 0, 0)
- 12 * (5, 2, 0, 0)
- 12 * (5, 1, 1, 0)
- 24 * (4, 2, 1, 0)
- 12 * (3, 3, 1, 0)
- 12 * (3, 2, 2, 0)
- 4 * (4, 1, 1, 1)
- 12 * (3, 2, 1, 1)
- 4 * (2, 2, 2, 1)
- 
- These are all the possible offspring observations (there are 12 ways to get (3, 3, 1, 0), for example).
- 
- If we MCMC each one, take the expected probability, multiply it by the corresponding weight, and take the mean.
- 
- 
- 
- I was not able to find papers on this, but it is essentially a Monte Carlo estimate.
- 
+This Dirichlet method is especially powerful. By only assuming the non-informative
+Dirichlet (uniform) prior, we can then get an estimate of the entire offspring
+probability vector. From there, we can solve for the roots of a polynomial and
+estimate the probability that the population goes extinct.
 
-```{r}
+All simulations for this data followed a Poisson distribution, but both binomial
+and multinomial likelihoods can be used to get very close estimtes on the true
+offspring probability distribution.
 
-# Example usage:
-N <- 30000  # Number of iterations
-vectors <- list(
-  c(7, 0, 0, 0),
-  c(6, 1, 0, 0),
-  c(5, 2, 0, 0),
-  c(5, 1, 1, 0),
-  c(4, 2, 1, 0),
-  c(3, 3, 1, 0),
-  c(3, 2, 2, 0),
-  c(4, 1, 1, 1),
-  c(3, 2, 1, 1),
-  c(2, 2, 2, 1)
-)
-a <- 1     # Shape parameter of prior
-b <- 1     # Shape parameter of prior
-K <- 7  # Number of trials in binomial distribution
+## Closing Remarks
 
+This vignette covered a variety of methods to perform inference on the offspring
+distribution, both for its mean (using beta-binomial conjugacy) and each offspring
+probability (with dirichlet-multinomial priors/likelihoods).
 
-# result <- betabin_tour(N, a, b, c(2,2,2,1), K)
-# print(mean(result$p[20000:N]))
-
-
-```
-
-```{r}
-4 * 0.1859731 +
- 12 * 0.1975058 +
- 12 * 0.1925846 +
- 12 * 0.1820622 +
- 24 * 0.1952222 +
- 12 * 0.193863 +
- 12 * 0.2004157 +
- 4 * 0.1921681 +
- 12 * 0.1888514 +
- 4 * 0.182556
-```
-
-
-
-
-
-```{r}
-20.79151/(4+12+12+12+24+12+12+4+12+4)
-```
-
-So mean $p$ is $0.192514$, implying $np \approx 2$.
-
-Could be a viable way if we only have the populations at 2 times, and no observations
-on the individual number of offspring.
-This for example, would be if we had a colony of bacteria, counted 100, then 250.
-Of course, permutations get ugly but still? Cool Monte Carlo estimate.
+These branching processes, though, are all of a ``single'' type. That is, they
+model population growth solely in numbers of individuals. The next vignette
+presents an extension of the single-type branching process, which is known
+as the multitype Galton Watson process.
 
