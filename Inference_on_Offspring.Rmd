@@ -461,3 +461,10 @@ model population growth solely in numbers of individuals. The next vignette
 presents an extension of the single-type branching process, which is known
 as the multitype Galton Watson process.
 
+[Cloez](https://hal.science/hal-01994949/document) explains the benefits of a Dirichlet
+prior in modeling branching processes. The paper also explains different types of
+inference, such as the extinction time and the short-term viability of the population.
+
+A Poisson model is presented in [Angelov](https://www.sciencedirect.com/science/article/pii/S0898122112000703#br000090).
+This inspired the idea of using a Binomial likelihood to perform inference on the mean of the Galton Watson process.
+
