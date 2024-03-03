@@ -370,7 +370,7 @@ display: none;
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
 <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -379,7 +379,8 @@ workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hi
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -391,8 +392,8 @@ workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hi
 <strong>Last updated:</strong> 2024-03-03
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
-<span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>~/hgen486/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed.">
@@ -412,19 +413,16 @@ versions</em> tab lists the development history.
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
-<span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
-changes </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of
-the R Markdown file created these results, you’ll want to first commit
-it to the Git repo. If you’re still working on the analysis, you can
-ignore this warning. When you’re finished, you can run
-<code>wflow_publish</code> to commit the R Markdown file and build the
-HTML.</p>
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
 </div>
 </div>
 </div>
@@ -508,13 +506,13 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjacksonvanvoorenhgen486treec495e24f1cfcb56d5a2ddb7b5ccbb9b7c565507ctargetblankc495e24a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjacksonvanvoorenhgen486treeeceb5fdd107fae04b7fcfca20f2d4df6cf25547ftargetblankeceb5fda">
 <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/jacksonvanvooren/hgen486/tree/c495e24f1cfcb56d5a2ddb7b5ccbb9b7c565507c" target="_blank">c495e24</a>
+<a href="https://github.com/jacksonvanvooren/hgen486/tree/eceb5fdd107fae04b7fcfca20f2d4df6cf25547f" target="_blank">eceb5fd</a>
 </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjacksonvanvoorenhgen486treec495e24f1cfcb56d5a2ddb7b5ccbb9b7c565507ctargetblankc495e24a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjacksonvanvoorenhgen486treeeceb5fdd107fae04b7fcfca20f2d4df6cf25547ftargetblankeceb5fda" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development
@@ -523,7 +521,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/jacksonvanvooren/hgen486/tree/c495e24f1cfcb56d5a2ddb7b5ccbb9b7c565507c" target="_blank">c495e24</a>.
+<a href="https://github.com/jacksonvanvooren/hgen486/tree/eceb5fdd107fae04b7fcfca20f2d4df6cf25547f" target="_blank">eceb5fd</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -549,7 +547,7 @@ Untracked files:
     Untracked:  hgen486.Rproj
 
 Unstaged changes:
-    Modified:   Multitype.Rmd
+    Modified:   Multitype.html
 
 </code></pre>
 <p>
@@ -594,6 +592,57 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/jacksonvanvooren/hgen486/blob/eceb5fdd107fae04b7fcfca20f2d4df6cf25547f/Multitype.Rmd" target="_blank">eceb5fd</a>
+</td>
+<td>
+Jackson Van Vooren
+</td>
+<td>
+2024-03-03
+</td>
+<td>
+Fix
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/jacksonvanvooren/hgen486/1d896c01238e58d931568376cd28d1969d074a34/Multitype.html" target="_blank">1d896c0</a>
+</td>
+<td>
+Jackson Van Vooren
+</td>
+<td>
+2024-03-03
+</td>
+<td>
+Typo
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/jacksonvanvooren/hgen486/blob/8382322285ee59e12937692fc4e7d0d4a351117d/Multitype.Rmd" target="_blank">8382322</a>
+</td>
+<td>
+Jackson Van Vooren
+</td>
+<td>
+2024-03-03
+</td>
+<td>
+Book
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -1044,7 +1093,7 @@ then extinction occurs with probability <span class="math inline">\(\mathbf{1}\)
 <p>The multitype branching process is supercritical, subcritical, or
 critical, based on the largest eigenvalue of <span class="math inline">\(A\)</span>, <span class="math inline">\(\lambda_{\text{max}}\)</span>.</p>
 <p>I defer the proof to <a href="https://www.rand.org/content/dam/rand/pubs/reports/2009/R381.pdf">Harris’s
-textbook</a> and solve for the largest eigenvalue of our mean
+textbook</a> and solve for the largest eigenvalue of the mean
 matrix.</p>
 <pre class="r"><code>eigenvalues &lt;- eigen(mean_matrix)$values
 print(max(Re(eigenvalues)))</code></pre>
