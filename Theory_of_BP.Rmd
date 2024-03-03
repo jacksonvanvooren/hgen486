@@ -251,7 +251,53 @@ extinction_prob
 ```
 
 So, only when an individual, on average, produces more than $1$ offspring, can
-we find an extinction probability less than $1$.
+we find an extinction probability less than $1$. We can also use a similar
+simulation to determine the survival probabilities at each generation for different
+values of $\lambda$. As expected, for $\lambda \leq 1$, the survival probability
+approaches $0$.
+
+```{r}
+simulate_survival <- function(num_generations, lambda) {
+  total_individuals <- 1
+
+  for (i in 2:num_generations) {
+    offspring <- 0
+  
+    for (j in 1:total_individuals) {
+      offspring <- offspring + rpois(1, lambda)
+    }
+    if (offspring == 0) {
+      return(0)
+    }
+    total_individuals <- offspring
+  }
+  return(1)
+}
+
+poisson_constants <- c(0.75, 1.0, 1.25, 1.5)
+num_simulations <- 200
+num_generations <- 30
+survival_probabilities <- matrix(NA, nrow = num_generations, ncol = length(poisson_constants))
+
+for (i in 1:length(poisson_constants)) {
+  for (gen in 1:num_generations) {
+    survival_results <- replicate(num_simulations, simulate_survival(gen, poisson_constants[i]))
+    survival_probabilities[gen, i] <- mean(survival_results)
+  }
+}
+
+plot(1:num_generations, survival_probabilities[, 1], type = "l", col = 1,
+                   ylim = c(0, 1), xlab = "Number of Generations",
+                   ylab = "Probability of Survival",
+                   main = "Galton-Watson Survival Rates for Poisson Processes")
+
+for (i in 2:length(poisson_constants)) {
+  lines(1:num_generations, survival_probabilities[, i], col = i)
+}
+
+legend("topright", legend = paste("Lambda =", poisson_constants),
+       col = 1:length(poisson_constants), lty = 1, title = "Poisson Constants")
+```
 
 ## Closing remarks
 
