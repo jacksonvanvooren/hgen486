@@ -10,36 +10,19 @@
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
+            color: #333;
         }
         header {
             background-color: #007bff;
             color: #fff;
             padding: 20px;
             text-align: center;
+            font-size: 20px;
         }
         h1 {
             margin-bottom: 20px;
             text-align: center;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-            text-align: center;
-        }
-        li {
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        a {
-            text-decoration: none;
-            color: #fff;
-            padding: 10px 20px;
-            border: 1px solid #007bff;
-            border-radius: 5px;
-        }
-        a:hover {
-            background-color: #007bff;
-            color: #fff;
+            color: #007bff;
         }
         .container {
             max-width: 800px;
@@ -49,19 +32,47 @@
             border-radius: 5px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
+        .page-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .page-list li {
+            margin-bottom: 10px;
+        }
+        .page-list li a {
+            display: block;
+            padding: 15px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .page-list li a:hover {
+            background-color: #0056b3;
+        }
+        .background-text {
+            font-size: 14px;
+            text-align: center;
+            margin-top: 50px;
+            color: #777;
+        }
     </style>
 </head>
 <body>
     <header>
-        <a href="index.html">Home</a>
+        My Website
     </header>
     <div class="container">
         <h1>Welcome to My Website</h1>
-        <ul>
-            <li><a href="Theory_of_BP.html">Page 1</a></li>
-            <li><a href="Inference_on_Offspring.html">Page 2</a></li>
-            <li><a href="Multitype.html">Page 3</a></li>
+        <ul class="page-list">
+            <li><a href="Theory_of_BP.html">Theory of Biological Psychology</a></li>
+            <li><a href="Inference_on_Offspring.html">Inference on Offspring</a></li>
+            <li><a href="Multitype.html">Multitype Inheritance</a></li>
         </ul>
+        <div class="background-text">
+            This is some background text about the website or its purpose.
+        </div>
     </div>
 </body>
 </html>
