@@ -263,7 +263,7 @@ integrand <- function(p){ dbeta(p, shape1 = 1 + S, shape2 = 1 + n * N - S) * dbe
 numerator <- integrate(integrand, lower = 1/N, upper = 1)
 denominator <- integrate(integrand, lower = 0, upper = 1)
 p_supercritical <- numerator$value / denominator$value
-cat("Supercritical probability", p_supercritical)
+cat("Supercritical probability:", p_supercritical)
 ```
 
 As expected, since $\mu = 2$, we almost surely can conclude that this branching
@@ -299,7 +299,7 @@ integrand <- function(p){ dbeta(p, shape1 = 1 + S, shape2 = 1 + n * N - S) * dbe
 numerator <- integrate(integrand, lower = 1/N, upper = 1)
 denominator <- integrate(integrand, lower = 0, upper = 1)
 p_supercritical <- numerator$value / denominator$value
-cat("Supercritical probability", p_supercritical)
+cat("Supercritical probability:", p_supercritical)
 ```
 
 With $\lambda < 1$, the theory tells us that extinction is inevitable. However,
