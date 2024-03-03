@@ -359,8 +359,10 @@ det(mean_matrix)
 
 This allows us to apply the following result. If $A$ is invertible and positive
 regular, then consider the largest eigenvalue of $A$, $\lambda_{\text{max}}$.
+
 - If $\lambda_{\text{max}} > 1$, then the extinction probability vector $\mathbf{P}_e < \mathbf{1}$,
 - If $\lambda_{\text{max}} \leq 1$, then extinction occurs with probability $\mathbf{1}$.
+
 The multitype branching process is supercritical, subcritical, or critical, based on the largest
 eigenvalue of $A$, $\lambda_{\text{max}}$.
 
