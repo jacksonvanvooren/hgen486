@@ -367,7 +367,7 @@ The multitype branching process is supercritical, subcritical, or critical, base
 eigenvalue of $A$, $\lambda_{\text{max}}$.
 
 I defer the proof to [Harris's textbook](https://www.rand.org/content/dam/rand/pubs/reports/2009/R381.pdf) and
-solve for the largest eigenvalue of our mean matrix.
+solve for the largest eigenvalue of the mean matrix.
 ```{r}
 eigenvalues <- eigen(mean_matrix)$values
 print(max(Re(eigenvalues)))
