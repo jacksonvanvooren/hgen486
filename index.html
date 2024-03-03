@@ -11,30 +11,27 @@
             padding: 0;
             background-color: #f4f4f4;
             color: #333;
-        }
-        header {
-            background-color: #007bff;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-            font-size: 20px;
-        }
-        h1 {
-            margin-bottom: 20px;
-            text-align: center;
-            color: #007bff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         .container {
             max-width: 800px;
-            margin: auto;
             padding: 20px;
             background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #007bff;
         }
         .page-list {
             list-style-type: none;
             padding: 0;
+            margin-bottom: 20px;
         }
         .page-list li {
             margin-bottom: 10px;
@@ -51,27 +48,28 @@
         .page-list li a:hover {
             background-color: #0056b3;
         }
-        .background-text {
-            font-size: 14px;
-            text-align: center;
-            margin-top: 50px;
-            color: #777;
+        .info-box {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .info-box p {
+            margin: 0 0 10px;
         }
     </style>
 </head>
 <body>
-    <header>
-        My Website
-    </header>
     <div class="container">
-        <h1>Welcome to My Website</h1>
+        <h1>Branching Processes: HGEN 48600 Final Project</h1>
         <ul class="page-list">
-            <li><a href="Theory_of_BP.html">Theory of Biological Psychology</a></li>
-            <li><a href="Inference_on_Offspring.html">Inference on Offspring</a></li>
-            <li><a href="Multitype.html">Multitype Inheritance</a></li>
+            <li><a href="Theory_of_BP.html">1. Introduction to Galton Watson Processes</a></li>
+            <li><a href="Inference_on_Offspring.html">2. Inference on Offspring Distribution</a></li>
+            <li><a href="Multitype.html">3. Multitype Branching Processes</a></li>
         </ul>
-        <div class="background-text">
-            This is some background text about the website or its purpose.
+        <div class="info-box">
+            <p><strong>Jackson Van Vooren</strong></p>
+            <p>This site is a series of vignettes on Galton Watson (branching) processes, which are used to model population growth over time. The site contains three vignettes. The first presents an overview and the basic theory of single type Galton Watson processes. The second covers various methods of inference on a branching process's offspring distribution. The final vignette extends the basic theory to branching processes that contain individuals of multiple types.</p>
         </div>
     </div>
 </body>
